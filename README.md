@@ -138,7 +138,7 @@ Channel Talk 신규 고객 등록 Webhook
 
 ## 📝 관련 글
 
-- [n8n 자동화 시리즈 #0 ~ #5 — Velog](https://velog.io/@00kang_jh/)
+- [n8n 자동화 시리즈 #0 ~ #5 — Velog]([https://velog.io/@00kang_jh/](https://velog.io/@00kang_jh/posts))
 
 ---
 
