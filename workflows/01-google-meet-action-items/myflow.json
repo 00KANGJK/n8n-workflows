@@ -1,0 +1,421 @@
+{
+  "name": "01-meeting-action-items",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "YOUR_DRIVE_FOLDER_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_FOLDER_NAME",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/YOUR_DRIVE_FOLDER_ID"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -192
+      ],
+      "id": "b90de071-6078-4942-a382-f35c0e115d65",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REDACTED",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8bd60d25-c611-4563-ae61-7e03a350022d",
+              "leftValue": "={{ $json.mimeType }}",
+              "rightValue": "=application/vnd.google-apps.document",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -288,
+        -192
+      ],
+      "id": "a2f5ac8b-6ba0-4bdc-a475-4dbc6ca35e84",
+      "name": "IF - Google Docs만 통과"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.content }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=너는 회의록에서 실행 가능한 항목(액션아이템)을 추출하는 도우미다.\n\n[입력 형식]\n입력 문서에는 자동 생성된 요약과 회의 원문 스크립트가 함께 들어 있다.\n- 요약 부분은 무시하고, 원문 대화 스크립트만 근거로 삼아라.\n- 원문 스크립트에 근거가 없는 내용은 절대 포함하지 마라. (요약에만 있고 원문에 없으면 버린다)\n\n[회의 기준 날짜]\n이 회의는 {{ $now.format('yyyy-MM-dd') }}에 진행되었다. 상대적 날짜 표현은 이 날짜를 기준으로 계산하라.\n\n[추출할 항목]\n- summary: 회의 전체를 한두 문장으로 요약한 문자열\n- decisions: 회의에서 내려진 결정사항 문자열들의 배열. 결정이 없으면 빈 배열 []\n- actionItems: 실행해야 할 작업들의 배열. 각 항목은 반드시 아래 네 필드를 모두 포함하는 객체다.\n    - assignee: 담당자 이름(문자열). 원문에 명시되지 않았으면 null\n    - task: 해야 할 일(문자열, 간결하게)\n    - dueDate: 기한을 \"YYYY-MM-DD\" 형식 문자열로. 기한 언급이 없으면 null\n    - priority: \"high\", \"medium\", \"low\" 중 하나. 명시가 없으면 \"medium\"\n\n[분류 규칙]\n- 액션아이템이 하나도 없으면 actionItems는 빈 배열 []을 반환한다. 억지로 만들어내지 마라.\n- 담당자나 기한이 불확실하면 추측하지 말고 null로 둔다.\n- \"미루기로 함\", \"연기하기로 결정\" 같은 내용은 actionItems가 아니라 decisions로 분류한다.\n\n[출력 형식 - 매우 중요]\n- 유효한 JSON 객체 하나만 출력한다.\n- 코드블록 표시(```)를 붙이지 마라.\n- JSON 앞뒤에 인사말, 설명, 그 어떤 문장도 붙이지 마라.\n- 값이 없는 필드는 필드를 생략하지 말고 반드시 null을 넣어라.\n- 모든 문자열은 큰따옴표(\")를 사용한다."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        96,
+        -304
+      ],
+      "id": "9b3dbcc3-9783-4dc2-b46d-1ae58f299d16",
+      "name": "Basic LLM Chain",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        160,
+        80
+      ],
+      "id": "ac961a6f-2ad4-4998-9148-2c48fcc6a73a",
+      "name": "Auto-fixing Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        288
+      ],
+      "id": "647f77df-4107-40ea-87f1-e5bebe82f020",
+      "name": "Gemini (auto-fix)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REDACTED",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        96,
+        -96
+      ],
+      "id": "847b39a3-50a8-49e5-905b-949d0bf50f0e",
+      "name": "Gemini (main)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "REDACTED",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"summary\": \"로그인 버그 수정과 회원가입 리뉴얼 일정을 논의함\",\n  \"decisions\": [\"회원가입 페이지 리뉴얼은 다음 스프린트로 연기\"],\n  \"actionItems\": [\n    {\n      \"assignee\": \"강준혁\",\n      \"task\": \"로그인 버그 수정\",\n      \"dueDate\": \"2026-07-17\",\n      \"priority\": \"high\"\n    }\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        288
+      ],
+      "id": "703cb369-a2ef-493f-aec0-6fc1f7e5789f",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "={{ $json.id }}"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        -304
+      ],
+      "id": "7d9292ab-7399-4847-b683-133e0f031a39",
+      "name": "회의록 텍스트 읽기",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "REDACTED",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.actionItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        496,
+        -512
+      ],
+      "id": "896bb072-3c62-47d8-af69-9b6bbae77b07",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "owner": {
+          "__rl": true,
+          "value": "YOUR_GITHUB_USER",
+          "mode": "list",
+          "cachedResultName": "YOUR_GITHUB_USER",
+          "cachedResultUrl": "https://github.com/YOUR_GITHUB_USER"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "YOUR_REPO",
+          "mode": "list",
+          "cachedResultName": "YOUR_REPO",
+          "cachedResultUrl": "https://github.com/YOUR_GITHUB_USER/YOUR_REPO"
+        },
+        "title": "={{ $json.task }}",
+        "body": "=담당: {{ $json.assignee ?? \"미정\" }} / 기한: {{ $json.dueDate ?? \"미정\" }}",
+        "labels": [],
+        "assignees": []
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        -496
+      ],
+      "id": "459ea7a0-3aaa-451d-a324-156c76755141",
+      "name": "이슈 생성",
+      "credentials": {
+        "githubApi": {
+          "id": "REDACTED",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_CHANNEL_NAME"
+        },
+        "text": "=📋 회의 요약 {{ $json.output.summary }}  결정사항 {{ $json.output.decisions.join(\"\\n- \") }}  액션아이템 {{ $json.output.actionItems.length }}건 이슈 등록 완료",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        496,
+        -368
+      ],
+      "id": "419c5c34-c8c6-4d4b-bad7-ffdf5e10172d",
+      "name": "Slack - 요약 발송",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REDACTED",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "YOUR_SLACK_CHANNEL_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_CHANNEL_NAME"
+        },
+        "text": "=📋 회의 요약 {{ $json.output.summary }}  결정사항 {{ $json.output.decisions.join(\"\\n- \") }}  액션아이템 {{ $json.output.actionItems.length }}건 이슈 등록 완료",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        496,
+        -176
+      ],
+      "id": "de5df474-e958-44f3-85ac-c0bae5e6f90f",
+      "name": "Slack - 실패 알림",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REDACTED",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF - Google Docs만 통과",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Google Docs만 통과": {
+      "main": [
+        [
+          {
+            "node": "회의록 텍스트 읽기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (auto-fix)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini (main)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "회의록 텍스트 읽기": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Slack - 요약 발송",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack - 실패 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "이슈 생성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack - 요약 발송": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "84af21f4-1533-4395-8c20-58a70d9558e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "nodeGroups": [],
+  "id": "A08eAOPrwmP14YPN",
+  "tags": [],
+  "instanceId": null
+}
