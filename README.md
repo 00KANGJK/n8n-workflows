@@ -51,7 +51,7 @@ n8n-workflows/
 Google Meet 종료
     → Webhook 트리거
     → 회의록 텍스트 수집
-    → Claude API로 액션아이템 추출 (담당자, 마감일, 내용)
+    → Gemini API로 액션아이템 추출 (담당자, 마감일, 내용)
     → JSON 파싱
     → 이슈 트래커에 자동 등록
     → Slack/Email 알림 발송
@@ -116,7 +116,7 @@ Channel Talk 신규 고객 등록 Webhook
 | 카테고리 | 도구 |
 |---------|------|
 | 자동화 엔진 | n8n (self-hosted) |
-| AI | Claude API (Anthropic) |
+| AI | Gemini API (Anthropic) |
 | 외부 서비스 | Channel Talk Open API · Google Meet API · Google Sheets API |
 | 알림 | Slack Webhook · Email (SMTP) |
 | 데이터 포맷 | JSON · Webhook |
